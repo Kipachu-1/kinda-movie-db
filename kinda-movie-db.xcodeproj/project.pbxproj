@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		80EDD44F2CDC93D300B6167D /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 80EDD44E2CDC93D300B6167D /* SnapKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		80EDD4302CDC937200B6167D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -22,6 +26,19 @@
 			remoteInfo = "kinda-movie-db";
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8077A9A92CDC94BD00598A72 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		80EDD4192CDC937100B6167D /* kinda-movie-db.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "kinda-movie-db.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -65,6 +82,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80EDD44F2CDC93D300B6167D /* SnapKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,6 +133,7 @@
 				80EDD4152CDC937100B6167D /* Sources */,
 				80EDD4162CDC937100B6167D /* Frameworks */,
 				80EDD4172CDC937100B6167D /* Resources */,
+				8077A9A92CDC94BD00598A72 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -125,6 +144,7 @@
 			);
 			name = "kinda-movie-db";
 			packageProductDependencies = (
+				80EDD44E2CDC93D300B6167D /* SnapKit */,
 			);
 			productName = "kinda-movie-db";
 			productReference = 80EDD4192CDC937100B6167D /* kinda-movie-db.app */;
@@ -208,6 +228,9 @@
 			);
 			mainGroup = 80EDD4102CDC937100B6167D;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				80EDD44D2CDC93D300B6167D /* XCRemoteSwiftPackageReference "SnapKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 80EDD41A2CDC937100B6167D /* Products */;
 			projectDirPath = "";
@@ -569,6 +592,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		80EDD44D2CDC93D300B6167D /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		80EDD44E2CDC93D300B6167D /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 80EDD44D2CDC93D300B6167D /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 80EDD4112CDC937100B6167D /* Project object */;
 }
