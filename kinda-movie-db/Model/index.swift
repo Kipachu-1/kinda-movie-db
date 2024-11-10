@@ -27,7 +27,6 @@ struct ActorDetail {
     let biography: String
     let birthDate: String
     let birthPlace: String
-    let knownFor: [Movie]
     let stats: ActorStats
 }
 
@@ -46,6 +45,5 @@ struct MovieDetail {
     let overview: String
     let genres: [String]
     let duration: String
-    let cast: [Actor]
 }
 

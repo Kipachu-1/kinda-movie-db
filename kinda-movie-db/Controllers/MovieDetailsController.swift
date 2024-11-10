@@ -1,14 +1,5 @@
-//
-//  MovieDetailsController.swift
-//  kinda-movie-db
-//
-//  Created by Arsen Kipachu on 11/7/24.
-//
-
 import UIKit
 import SnapKit
-
-
 
 // MARK: - View Controller
 class MovieDetailsViewController: UIViewController {
@@ -16,15 +7,15 @@ class MovieDetailsViewController: UIViewController {
     // MARK: - Properties
     private var movie: Movie
     private var movieDetail: MovieDetail?
+    private var cast: [Actor] = []
+    private var isLoading = true
     
-    
-    private  func fetchMovieDetails() {
-        let fetchedData = mockMovieDetails.first { $0.id == movie.id }
-        if(fetchedData == nil) {
-            self.dismiss(animated: true)
-        }
-        movieDetail = fetchedData;
-    }
+    private lazy var loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.color = .systemGray
+        return indicator
+    }()
     
     private lazy var tableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .grouped)
@@ -34,6 +25,29 @@ class MovieDetailsViewController: UIViewController {
         tv.backgroundColor = .systemBackground
         return tv
     }()
+    
+    private func fetchMovieDetails() async {
+        do {
+            let fetchedData = try await MovieDBService.shared.fetchMovieDetails(id: movie.id)
+            let fetchedDataCast = try await MovieDBService.shared.fetchMovieCredits(id: movie.id)
+            movieDetail = fetchedData
+            cast = fetchedDataCast
+            
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.loadingIndicator.stopAnimating()
+                self.tableView.isHidden = false
+                self.tableView.reloadData()
+            }
+        } catch {
+            print("Error: \(error)")
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.loadingIndicator.stopAnimating()
+                self.dismiss(animated: true)
+            }
+        }
+    }
     
     // MARK: - Initialization
     init(movie: Movie) {
@@ -47,17 +61,31 @@ class MovieDetailsViewController: UIViewController {
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
-        fetchMovieDetails()
         super.viewDidLoad()
         setupUI()
         setupNavigationBar()
+        
+        // Start loading state
+        loadingIndicator.startAnimating()
+        tableView.isHidden = true
+        
+        Task {
+            await fetchMovieDetails()
+        }
     }
     
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
-        view.addSubview(tableView)
         
+        // Add loading indicator
+        view.addSubview(loadingIndicator)
+        loadingIndicator.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
+        
+        // Add table view
+        view.addSubview(tableView)
         tableView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
@@ -100,10 +128,19 @@ extension MovieDetailsViewController: UITableViewDelegate, UITableViewDataSource
             posterImageView.contentMode = .scaleAspectFill
             posterImageView.clipsToBounds = true
             cell.contentView.addSubview(posterImageView)
-            
             posterImageView.snp.makeConstraints { make in
                 make.edges.equalToSuperview()
                 make.height.equalTo(300)
+            }
+            let imageUrl = URL(string: movie.posterImage)
+            if let url = imageUrl {
+                URLSession.shared.dataTask(with: url) { data, response, error in
+                    if let data = data, error == nil {
+                        DispatchQueue.main.async { // Ensure UI update happens on main thread
+                            posterImageView.image = UIImage(data: data)
+                        }
+                    }
+                }.resume()
             }
             
         case 1: // Info Section
@@ -194,21 +231,20 @@ extension MovieDetailsViewController {
 // MARK: - UICollectionViewDelegate & DataSource
 extension MovieDetailsViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return movieDetail?.cast.count ?? 0
+        return self.cast.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CastCell.identifier, for: indexPath) as? CastCell else {
             return UICollectionViewCell()
         }
-        cell.configure(with: movieDetail!.cast[indexPath.item])
+        cell.configure(with: self.cast[indexPath.item])
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let actor = movieDetail?.cast[indexPath.item]
-        if(actor == nil) { return }
-        let actorDetailsVC = ActorDetailsViewController(actor: actor!)
+        let actor = self.cast[indexPath.item]
+        let actorDetailsVC = ActorDetailsViewController(actor: actor)
         navigationController?.pushViewController(actorDetailsVC, animated: true)
     }
 }

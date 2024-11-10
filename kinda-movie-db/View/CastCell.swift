@@ -73,5 +73,16 @@ class CastCell: UICollectionViewCell {
         nameLabel.text = actor.name
         characterLabel.text = actor.character
         // In a real app, you would load the actor's image here
+        let imageUrl = URL(string: actor.image)
+        if let url = imageUrl {
+            URLSession.shared.dataTask(with: url) { data, response, error in
+                if let data = data, error == nil {
+                    DispatchQueue.main.async { // Ensure UI update happens on main thread
+                        self.imageView.image = UIImage(data: data)
+                    }
+                }
+            }.resume()
+        }
+
     }
 }

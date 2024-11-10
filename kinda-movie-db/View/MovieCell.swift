@@ -7,6 +7,8 @@
 
 import UIKit
 import SnapKit
+import SDWebImage
+
 
 class MovieCell: UICollectionViewCell {
     static let identifier = "MovieCell"
@@ -55,6 +57,15 @@ class MovieCell: UICollectionViewCell {
     func configure(with movie: Movie) {
         titleLabel.text = movie.title
         // In a real app, you would load the image here
-        posterImageView.backgroundColor = .systemGray5
+        guard let url = URL(string: movie.posterImage) else { return }
+           
+           // Set contentMode to center for placeholder image
+           posterImageView.contentMode = .center
+           let placeholderImage = UIImage(systemName: "photo")
+           
+           posterImageView.sd_setImage(with: url, placeholderImage: placeholderImage, options: [], completed: { [weak self] _, _, _, _ in
+               // Change contentMode back to aspectFill after the image is loaded
+               self?.posterImageView.contentMode = .scaleAspectFill
+           })
     }
 }

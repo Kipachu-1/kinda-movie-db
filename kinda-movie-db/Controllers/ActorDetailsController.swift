@@ -15,12 +15,39 @@ class ActorDetailsViewController: UIViewController {
     // MARK: - Properties
     private let actor: Actor
     private var actorDetail: ActorDetail?
+    private var actorMovies: [Movie] = []
+    private var isLoading = true
     
-    private func fetchActorDetails() {
-        let fetchedActorDetails = mockActorDetails.first { $0.id == actor.id }
-        if(fetchedActorDetails == nil) {self.dismiss(animated: true)}
-        
-        actorDetail = fetchedActorDetails!
+    private lazy var loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.hidesWhenStopped = true
+        indicator.color = .systemGray
+        return indicator
+    }()
+    
+    
+    private func fetchActorDetails() async {
+        do {
+            let fetchedData = try await MovieDBService.shared.fetchActorDetails(id: actor.id)
+            let fetchedMovies = try await MovieDBService.shared.fetchActorMovies(id: actor.id)
+            
+            actorDetail = fetchedData
+            actorMovies = fetchedMovies
+            
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.loadingIndicator.stopAnimating()
+                self.tableView.isHidden = false
+                self.tableView.reloadData()
+            }
+        } catch {
+            print("Error: \(error)")
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.loadingIndicator.stopAnimating()
+                self.dismiss(animated: true)
+            }
+        }
         
     }
 
@@ -45,8 +72,17 @@ class ActorDetailsViewController: UIViewController {
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
-        fetchActorDetails()
+//        fetchActorDetails()
         super.viewDidLoad()
+        
+        // Start loading state
+        loadingIndicator.startAnimating()
+        tableView.isHidden = true
+        
+        Task {
+            await fetchActorDetails()
+        }
+        
         setupUI()
         setupNavigationBar()
     }
@@ -54,6 +90,15 @@ class ActorDetailsViewController: UIViewController {
     // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .systemBackground
+        
+        // Add loading indicator
+        view.addSubview(loadingIndicator)
+        loadingIndicator.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
+        
+        
+        
         view.addSubview(tableView)
         
         tableView.snp.makeConstraints { make in
@@ -150,10 +195,22 @@ extension ActorDetailsViewController: UITableViewDelegate, UITableViewDataSource
             profileImageView.layer.cornerRadius = 75
             cell.contentView.addSubview(profileImageView)
             
+            
             profileImageView.snp.makeConstraints { make in
                 make.centerX.equalToSuperview()
                 make.top.bottom.equalToSuperview().inset(16)
                 make.size.equalTo(150)
+            }
+            
+            let imageUrl = URL(string: actor.image)
+            if let url = imageUrl {
+                URLSession.shared.dataTask(with: url) { data, response, error in
+                    if let data = data, error == nil {
+                        DispatchQueue.main.async { // Ensure UI update happens on main thread
+                            profileImageView.image = UIImage(data: data)
+                        }
+                    }
+                }.resume()
             }
             
         case 1: // Stats Section
@@ -221,7 +278,7 @@ extension ActorDetailsViewController {
         layout.scrollDirection = .horizontal
         layout.itemSize = CGSize(width: 120, height: 200)
         layout.minimumInteritemSpacing = 16
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom:0, right: 16)
         
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
@@ -236,19 +293,19 @@ extension ActorDetailsViewController {
 // MARK: - UICollectionViewDelegate & DataSource
 extension ActorDetailsViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return actorDetail?.knownFor.count ?? 0
+        return actorMovies.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MovieCreditsCell.identifier, for: indexPath) as? MovieCreditsCell else {
             return UICollectionViewCell()
         }
-        cell.configure(with: actorDetail!.knownFor[indexPath.item])
+        cell.configure(with: actorMovies[indexPath.item])
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let dummyMovie = mockMovies[indexPath.item]
+        let dummyMovie = actorMovies[indexPath.item]
         let detailsVC = MovieDetailsViewController(movie: dummyMovie)
         navigationController?.pushViewController(detailsVC, animated: true)
     }

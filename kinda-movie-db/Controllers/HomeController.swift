@@ -15,6 +15,7 @@ class HomeViewController: UIViewController {
     
     // MARK: - Properties
     private var movies: [Movie] = []
+
     
     private lazy var collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -36,8 +37,10 @@ class HomeViewController: UIViewController {
           super.viewDidLoad()
           setupUI()
           setupNavigationBar()
-          loadDummyData()
-          
+            Task{
+                await loadDummyData()
+            }
+        
           // Add this to ensure collection view doesn't go under tab bar
           if #available(iOS 11.0, *) {
               collectionView.contentInsetAdjustmentBehavior = .always
@@ -64,10 +67,14 @@ class HomeViewController: UIViewController {
         navigationController?.navigationBar.prefersLargeTitles = true
     }
     
-    private func loadDummyData() {
+    private func loadDummyData() async {
         // In a real app, this would come from an API
-        movies = mockMovies
-        collectionView.reloadData()
+        do {
+            movies = try await MovieDBService.shared.fetchPopularMovies(page: 1)
+            collectionView.reloadData()
+        } catch{
+            print("Error: \(error)")
+        }
     }
 }
 
@@ -87,7 +94,7 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
     
     // In HomeViewController
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let dummyMovie = mockMovies[indexPath.item]
+        let dummyMovie = movies[indexPath.item]
         let detailsVC = MovieDetailsViewController(movie: dummyMovie)
         navigationController?.pushViewController(detailsVC, animated: true)
     }
@@ -97,6 +104,6 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
 extension HomeViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let width = (collectionView.bounds.width - 48) / 2 // 48 = padding (16 * 3)
-        return CGSize(width: width, height: width * 2) // Height includes space for title
+        return CGSize(width: width, height: width * 1.8) // Height includes space for title
     }
 }
